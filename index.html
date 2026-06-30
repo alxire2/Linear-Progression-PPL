@@ -77,6 +77,13 @@ body{background:#0D0D0D;color:#F0EDE6;font-family:'JetBrains Mono','SF Mono','Fi
 .prog-chip{flex:1;min-width:90px;padding:7px 10px;border-radius:8px;background:#0D0D0D;border:1px solid #222}
 .prog-chip-label{font-size:9px;color:#666;letter-spacing:.5px;text-transform:uppercase}
 .prog-chip-val{font-size:13px;font-weight:600;margin-top:1px}
+.warmup-block{margin-bottom:8px;background:#0D0D0D;border:1px dashed #262626;border-radius:10px;padding:8px 12px}
+.warmup-head{font-size:10px;color:#777;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:5px;display:flex;justify-content:space-between;align-items:center}
+.warmup-head span{color:#555;letter-spacing:.5px;text-transform:none}
+.warmup-row{display:flex;justify-content:space-between;align-items:center;padding:3px 0;font-size:13px}
+.warmup-w{color:#AAA;font-weight:500}
+.warmup-r{color:#666;font-size:12px}
+.warmup-empty{font-size:11px;color:#555;font-style:italic;line-height:1.4}
 
 .set-row{display:flex;align-items:center;gap:10px;padding:9px 10px;background:#0D0D0D;border:1px solid #222;border-radius:10px;transition:all .2s}
 .set-check{width:26px;height:26px;border-radius:8px;border:2px solid #333;background:transparent;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0;cursor:pointer;-webkit-appearance:none;appearance:none;outline:none}
@@ -403,6 +410,35 @@ function getDk(){return dateKey(selectedDate)}
 function todayKey(){const t=new Date();t.setHours(0,0,0,0);return dateKey(t)}
 function getDayType(d){return CYCLES[settings.cycle][d.getDay()]}
 function round5(x){return Math.round(x/5)*5}
+
+// Warm-up ramp calculated off a main lift's working weight (W). Display-only guidance.
+function computeWarmups(W){
+  W=parseFloat(W);
+  if(!W||isNaN(W)||W<=0)return null;
+  const bar=45;
+  if(W<=bar+5)return [];
+  let raw=[{w:bar,r:5}];
+  if(W<135){raw.push({w:round5((bar+W)/2),r:3});}
+  else{
+    raw.push({w:round5(W*0.4),r:5});
+    raw.push({w:round5(W*0.6),r:3});
+    raw.push({w:round5(W*0.8),r:2});
+    if(W>275)raw.push({w:round5(W*0.9),r:1});
+  }
+  const out=[];let last=0;
+  for(const s of raw){let w=s.w<bar?bar:s.w;if(w>=W)continue;if(w<=last)continue;out.push({w:w,r:s.r});last=w;}
+  return out;
+}
+function warmupHTML(W){
+  const sets=computeWarmups(W);
+  if(sets===null)return '<div class="warmup-empty">Enter working weight to see the warm-up ramp</div>';
+  if(sets.length===0)return '<div class="warmup-empty">Light enough to start at working weight — a feeler set is plenty</div>';
+  const rows=sets.map((s,i)=>{
+    const label=i===0?'Empty bar':(s.w+' lb');
+    return '<div class="warmup-row"><span class="warmup-w">'+label+'</span><span class="warmup-r">&times; '+s.r+'</span></div>';
+  }).join('');
+  return '<div class="warmup-head">Warm-up <span>off '+round5(parseFloat(W))+' lb</span></div>'+rows;
+}
 
 function getDayEntry(dk){
   if(!dayData[dk])dayData[dk]={sets:{},work:{},swaps:{},extra:{},advanced:{}};
@@ -807,7 +843,7 @@ function render(){
       const lbl=document.createElement("label");lbl.textContent="Working Weight";
       const inp=document.createElement("input");inp.type="number";inp.inputMode="decimal";inp.placeholder="0";
       const wv=getWork(dk,exIdx,ex.name);inp.value=wv===""?"":wv;
-      inp.addEventListener("input",e=>{setWork(dk,exIdx,e.target.value)});inp.addEventListener("click",e=>e.stopPropagation());
+      inp.addEventListener("input",e=>{setWork(dk,exIdx,e.target.value);const _wb=document.getElementById("warmup-"+exIdx);if(_wb)_wb.innerHTML=warmupHTML(e.target.value)});inp.addEventListener("click",e=>e.stopPropagation());
       const unit=document.createElement("span");unit.className="unit";unit.textContent="lb";
       ww.appendChild(lbl);ww.appendChild(inp);ww.appendChild(unit);sd.appendChild(ww);
 
@@ -826,6 +862,10 @@ function render(){
       if(prev&&prev.work){const pv=document.createElement("div");pv.className="prev-data";
         const amrapPrev=prev.sets[ex.work];const ar=amrapPrev?amrapPrev.reps:"";
         pv.innerHTML=`Last: <span>${prev.work} lb${ar?" · top set "+ar+" reps":""}</span>`;sd.appendChild(pv)}
+
+      // warm-up ramp (calculated off working weight, display-only)
+      const wbk=document.createElement("div");wbk.className="warmup-block";wbk.id="warmup-"+exIdx;
+      wbk.innerHTML=warmupHTML(getWork(dk,exIdx,ex.name));sd.appendChild(wbk);
 
       // sets: work sets + amrap
       for(let si=0;si<tot;si++){
