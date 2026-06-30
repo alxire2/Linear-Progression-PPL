@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" width="192" height="192">
+  <rect width="192" height="192" rx="40" fill="#0D0D0D"/>
+  <!-- ascending LP line -->
+  <polyline points="34,150 70,120 106,128 158,64" fill="none" stroke="#7B5AA6" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="34" cy="150" r="6" fill="#7B5AA6"/>
+  <circle cx="70" cy="120" r="6" fill="#7B5AA6"/>
+  <circle cx="106" cy="128" r="6" fill="#7B5AA6"/>
+  <circle cx="158" cy="64" r="7" fill="#FFD700"/>
+  <!-- barbell -->
+  <g transform="translate(96,52)">
+    <rect x="-46" y="-6" width="92" height="12" rx="3" fill="#F0EDE6"/>
+    <rect x="-58" y="-16" width="12" height="32" rx="3" fill="#E85D3A"/>
+    <rect x="-70" y="-12" width="10" height="24" rx="3" fill="#E85D3A"/>
+    <rect x="46" y="-16" width="12" height="32" rx="3" fill="#2D7DD2"/>
+    <rect x="60" y="-12" width="10" height="24" rx="3" fill="#2D7DD2"/>
+  </g>
+</svg>
